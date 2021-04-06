@@ -3,6 +3,8 @@
 #!/usr/bin/env python
 from socket import *
 import sys
+import json 
+import os 
 
 s = socket(AF_INET,SOCK_DGRAM)
 host = sys.argv[1]
@@ -10,45 +12,32 @@ port = int(sys.argv[2])
 buf =1024
 addr = (host,port)
 
-#f=open("a.txt","rb")
-#data = f.read(buf)
-#print(type(data))
-#while (data):
-#    if(s.sendto(data,addr)):
-#        print("sending ...")
-#        data = f.read(buf)
-#file_size = sys.getsizeof(sys.stdin)
-#data = " "
-#data_bytes = b''
-#print(type(data_bytes))
-#for bits in sys.stdin:
-#	if((sys.getsizeof(data)-1) < buf):
-#		data += bits
-#	else:
-#		print(data)
-#		data_bytes = str.encode(data)
-#		s.sendto(data_bytes,addr)
-#		data = bits
-#		data_bytes = b''
+command = "ping -qc3 " + host + " 2>&1 | awk -F\'/\' \'END{print(/^rtt/? \"\"$6\"\":\"1\")}\'"
+temp = os.popen(cmd).read()
 
-data = ""
+TimeOut_RTT = float(temp)
+
+datagram  = {"sequence_number": 23134,"data":""}
+datagram_buffer = []
 
 while True:
 	line = sys.stdin.readline()
 	if not line:
-		if(s.sendto(bytes(data, 'utf-8'),addr)):
+		packet = json.dumps(datagram)
+		if(s.sendto(bytes(datagram,'utf-8'),addr)):
 			print("sending...")
+			#print(datagram)
 		break
-	if((sys.getsizeof(data)-1 + sys.getsizeof(line)) < buf):
-		data += line
+	if((sys.getsizeof(datagram["data"])-1 + sys.getsizeof(line)) < buf):
+#		data += line
+		datagram["data"] += str(line)
 	else:
-		if(s.sendto(bytes(data, 'utf-8'),addr)):
+		datagram = json.dumps(datagram)
+		if(s.sendto(bytes(datagram,'utf-8'),addr)):
 			print("sending...")
-		data = line
+			#print(datagram)
+#		data = line
+		datagram = json.loads(datagram)
+		datagram["data"] = str(line)
 
-
-
-
-#print("sent" + str(file_size))
 s.close()
-#f.close()
